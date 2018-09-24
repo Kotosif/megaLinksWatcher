@@ -2,6 +2,7 @@ import re
 import urllib.request
 import urllib.parse
 import json
+import time
 
 
 def readLinkFromFile(filename):
@@ -9,6 +10,7 @@ def readLinkFromFile(filename):
     try:
         linkFile = open(filename, "r")
         link = linkFile.readline()
+        linkFile.close()
         if link == "":
             return None
         else:
@@ -22,7 +24,7 @@ def extractURLDetails(link):
     match = regex.search(link)
     if match is None:
         raise LookupError(
-            "Could not find a regex match. Is the URL you gave formatted correctly?"
+            "Could not extract the board and thread number. Is the URL you gave formatted correctly?"
         )
     board = match.group(1)
     threadNumber = match.group(2)
@@ -57,12 +59,12 @@ def getThreadPostsInJSONFormat(link):
     except urllib.error.HTTPError as httpError:
         print(httpError.headers)
         print(httpError)
-        exit(-1)
+        raise httpError
 
 
 def findAllMegaLinks(posts, responseType):
     # posts - a list of the posts as a json object returned from the 4chan API
-    regex = re.compile("(https://mega\.nz/#.?![\w!_-]+)( |<|$)")
+    regex = re.compile(r"(https://mega\.nz/#.?![\w!_-]+)( |<|$)")
     megaLinks = []
     matches = []
     print("Finding all mega links in thread...")
@@ -78,10 +80,38 @@ def findAllMegaLinks(posts, responseType):
     return megaLinks
 
 
+def getNewLinks(megaLinks, databaseFilename):
+    try:
+        databaseFile = open(databaseFilename, "r")
+        databaseLinks = databaseFile.readlines()
+        links = []
+        newLinks = []
+        for link in databaseLinks:
+            links.append(link.replace("\n", ""))
+        for link in megaLinks:
+            if not link in links:
+                newLinks.append(link)
+        return newLinks
+    except (IOError, FileNotFoundError):
+        return []
+
+
+def saveLinksToFile(links, databaseFilename):
+    try:
+        databaseFile = open(databaseFilename, "a")
+        for link in links:
+            databaseFile.write(link)
+            databaseFile.write("\n")
+        databaseFile.close()
+    except (IOError, FileNotFoundError):
+        print("Error opening database file %s" % databaseFilename)
+
+
 # Main Function
 if __name__ == "__main__":
     # Config init
     linkFilename = "url.txt"
+    databaseFilename = "seenList.txt"
 
     # Main program execution
     print("This is an application for watching Mega.nz links on 4chan threads")
@@ -102,6 +132,14 @@ if __name__ == "__main__":
         responseType = "html"
     else:
         responseType = "json"
-    posts = getThreadPostsInJSONFormat(link)
-    megaLinks = findAllMegaLinks(posts, responseType)
-    print(megaLinks)
+    while (True):
+        try:
+            posts = getThreadPostsInJSONFormat(link)
+            megaLinks = findAllMegaLinks(posts, responseType)
+            newLinks = getNewLinks(megaLinks, databaseFilename)
+            print(newLinks)
+            saveLinksToFile(newLinks, databaseFilename)
+        except urllib.error.HTTPError:
+            pass
+        # time.sleep(1 * 60 * 60)
+        time.sleep(10)
