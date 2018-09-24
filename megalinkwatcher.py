@@ -3,6 +3,8 @@ import urllib.request
 import urllib.parse
 import json
 import time
+import smtplib
+from email.message import EmailMessage
 
 
 def readLinkFromFile(filename):
@@ -107,12 +109,64 @@ def saveLinksToFile(links, databaseFilename):
         print("Error opening database file %s" % databaseFilename)
 
 
+def loadConfigSettings(configFilename):
+    global linkFilename
+    global databaseFilename
+    global toAddress
+    global interval
+    global fromAddress
+    global emailPass
+    try:
+        configFile = open(configFilename, "r")
+        configContents = configFile.read()
+        configJSON = json.loads(configContents)
+        linkFilename = configJSON["urlFile"]
+        databaseFilename = configJSON["databaseFile"]
+        toAddress = configJSON["email"]["toAddress"]
+        fromAddress = configJSON["email"]["fromAddress"]
+        emailPass = configJSON["email"]["pass"]
+        interval = configJSON["interval"]
+    except (IOError, FileNotFoundError):
+        print("Error opening config file %s" % configFilename)
+
+
+def sendEmail(server, fromAddress, toAddress, megaLinks, url):
+    msg = EmailMessage()
+    msg.set_content(str(megaLinks))
+    msg["Subject"] = "New megalinks found"
+    msg["From"] = fromAddress
+    msg["To"] = toAddress
+    server.send_message(msg)
+
+
+def setupSMTPServer(loginDetails):
+    # Make sure you have set your gmail account settings to
+    # accept less secure apps
+    # https://myaccount.google.com/lesssecureapps
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server.set_debuglevel(True)
+    server.ehlo()
+    server.starttls()
+    server.ehlo()
+    username, password = loginDetails
+    server.login(username, password)
+    return server
+
+
+# Config init
+configFilename = "config.json"
+linkFilename = ""
+databaseFilename = ""
+interval = 0
+toAddress = ""
+fromAddress = ""
+emailPass = ""
+
 # Main Function
 if __name__ == "__main__":
-    # Config init
-    linkFilename = "url.txt"
-    databaseFilename = "seenList.txt"
-
+    # Load config
+    loadConfigSettings(configFilename)
+    smtpServer = setupSMTPServer((fromAddress, emailPass))
     # Main program execution
     print("This is an application for watching Mega.nz links on 4chan threads")
     print(
@@ -138,8 +192,10 @@ if __name__ == "__main__":
             megaLinks = findAllMegaLinks(posts, responseType)
             newLinks = getNewLinks(megaLinks, databaseFilename)
             print(newLinks)
-            saveLinksToFile(newLinks, databaseFilename)
+            if (len(newLinks) > 0):
+                print("Sending email to %s" % toAddress)
+                sendEmail(smtpServer, fromAddress, toAddress, megaLinks, link)
+                saveLinksToFile(newLinks, databaseFilename)
         except urllib.error.HTTPError:
             pass
-        # time.sleep(1 * 60 * 60)
-        time.sleep(10)
+        time.sleep(interval)
