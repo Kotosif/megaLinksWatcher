@@ -5,6 +5,7 @@ import json
 import time
 import smtplib
 from email.message import EmailMessage
+from os import environ
 
 
 def readLinkFromFile(filename):
@@ -122,9 +123,9 @@ def loadConfigSettings(configFilename):
         configJSON = json.loads(configContents)
         linkFilename = configJSON["urlFile"]
         databaseFilename = configJSON["databaseFile"]
-        toAddress = configJSON["email"]["toAddress"]
-        fromAddress = configJSON["email"]["fromAddress"]
-        emailPass = configJSON["email"]["pass"]
+        toAddress = environ["toAddress"]
+        fromAddress = environ["fromAddress"]
+        emailPass = environ["emailpass"]
         interval = configJSON["interval"]
     except (IOError, FileNotFoundError):
         print("Error opening config file %s" % configFilename)
