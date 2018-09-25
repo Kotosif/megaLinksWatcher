@@ -131,6 +131,14 @@ def loadConfigSettings(configFilename):
         print("Error opening config file %s" % configFilename)
 
 
+def getURLLinkFromConfigVar():
+    try:
+        url = environ["url"]
+        return (url, None)
+    except KeyError as e:
+        return ("", e)
+
+
 def sendEmail(server, fromAddress, toAddress, megaLinks, url):
     msg = EmailMessage()
     msg.set_content(str(megaLinks))
@@ -176,12 +184,17 @@ if __name__ == "__main__":
     print("Now looking for %s file..." % linkFilename)
     link = readLinkFromFile(linkFilename)
     if link is None:
-        print("Could not find %s file. Please input the URL manually:" %
+        print("Could not find %s file. Checking config variables instead." %
               linkFilename)
-        while (link is None or link == ""):
-            link = input()
-            if (link is None or link == ""):
-                print("Please enter a URL")
+        link, error = getURLLinkFromConfigVar()
+        if (not error is None):
+            print(
+                "Could not find url from config either. Please input the URL manually:"
+                % linkFilename)
+            while (link is None or link == ""):
+                link = input()
+                if (link is None or link == ""):
+                    print("Please enter a URL")
     responseType = ""
     if "archived.moe" in link:
         responseType = "html"
