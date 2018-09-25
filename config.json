@@ -1,5 +1,5 @@
 {
-    "interval": 60,
+    "interval": 43200,
     "urlFile": "url.txt",
     "databaseFile": "seenList.txt"
 }
