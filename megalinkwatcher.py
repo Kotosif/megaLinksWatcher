@@ -67,19 +67,28 @@ def getThreadPostsInJSONFormat(link):
 
 def findAllMegaLinks(posts, responseType):
     # posts - a list of the posts as a json object returned from the 4chan API
-    regex = re.compile(r"(https://mega\.nz/#.?![\w!_-]+)( |<|$)")
+    regex = re.compile(r"(https://mega\.nz/#.?!([\w!_-]+(<wbr>)?)+)( |<|$)")
     megaLinks = []
     matches = []
     print("Finding all mega links in thread...")
     for post in posts:
         if responseType == "json":
-            comment = post["com"]
-            matches = regex.findall(comment)
+            try:
+                comment = post["com"]
+                matches = regex.findall(comment)
+                for match in matches:
+                    fullMatch = "".join(match)
+                    fullMatch = fullMatch.replace("<wbr>", "")
+                    fullMatch = fullMatch.replace("<", "")
+                    fullMatch = fullMatch.strip()
+                    megaLinks.append(fullMatch)
+            except (KeyError):
+                continue
         elif responseType == "html":
             matches = regex.findall(post)
-        for matchedLink, _extras in matches:
-            if not matchedLink in megaLinks:
-                megaLinks.append(matchedLink)
+            for matchedLink, _extras in matches:
+                if not matchedLink in megaLinks:
+                    megaLinks.append(matchedLink)
     return megaLinks
 
 
@@ -208,7 +217,7 @@ if __name__ == "__main__":
             print(newLinks)
             if (len(newLinks) > 0):
                 print("Sending email to %s" % toAddress)
-                sendEmail(smtpServer, fromAddress, toAddress, megaLinks, link)
+                sendEmail(smtpServer, fromAddress, toAddress, newLinks, link)
                 saveLinksToFile(newLinks, databaseFilename)
         except urllib.error.HTTPError:
             pass
