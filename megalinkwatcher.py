@@ -94,7 +94,7 @@ def findAllMegaLinks(posts, responseType):
 
 def getNewLinks(megaLinks, databaseFilename):
     try:
-        databaseFile = open(databaseFilename, "r")
+        databaseFile = open(databaseFilename, "w+")
         databaseLinks = databaseFile.readlines()
         links = []
         newLinks = []
@@ -105,6 +105,7 @@ def getNewLinks(megaLinks, databaseFilename):
                 newLinks.append(link)
         return newLinks
     except (IOError, FileNotFoundError):
+        print("Error opening database file %s" % databaseFilename)
         return []
 
 
@@ -213,8 +214,9 @@ if __name__ == "__main__":
         try:
             posts = getThreadPostsInJSONFormat(link)
             megaLinks = findAllMegaLinks(posts, responseType)
+            print("Megalinks found:" + megaLinks.__str__())
             newLinks = getNewLinks(megaLinks, databaseFilename)
-            print(newLinks)
+            print("New links found:" + newLinks.__str__())
             if (len(newLinks) > 0):
                 print("Sending email to %s" % toAddress)
                 sendEmail(smtpServer, fromAddress, toAddress, newLinks, link)
