@@ -94,7 +94,8 @@ def findAllMegaLinks(posts, responseType):
 
 def getNewLinks(megaLinks, databaseFilename):
     try:
-        databaseFile = open(databaseFilename, "w+")
+        databaseFile = open(databaseFilename, "a+")
+        databaseFile.seek(0)
         databaseLinks = databaseFile.readlines()
         links = []
         newLinks = []
