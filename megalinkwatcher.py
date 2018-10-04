@@ -3,9 +3,8 @@ import urllib.request
 import urllib.parse
 import json
 import time
-import smtplib
-from email.message import EmailMessage
 from os import environ
+from emailService import EmailService
 
 
 def readLinkFromFile(filename):
@@ -149,30 +148,6 @@ def getURLLinkFromConfigVar():
     except KeyError as e:
         return ("", e)
 
-
-def sendEmail(server, fromAddress, toAddress, megaLinks, url):
-    msg = EmailMessage()
-    msg.set_content(str(megaLinks))
-    msg["Subject"] = "New megalinks found"
-    msg["From"] = fromAddress
-    msg["To"] = toAddress
-    server.send_message(msg)
-
-
-def setupSMTPServer(loginDetails):
-    # Make sure you have set your gmail account settings to
-    # accept less secure apps
-    # https://myaccount.google.com/lesssecureapps
-    server = smtplib.SMTP('smtp.gmail.com', 587)
-    server.set_debuglevel(True)
-    server.ehlo()
-    server.starttls()
-    server.ehlo()
-    username, password = loginDetails
-    server.login(username, password)
-    return server
-
-
 # Config init
 configFilename = "config.json"
 linkFilename = ""
@@ -186,7 +161,12 @@ emailPass = ""
 if __name__ == "__main__":
     # Load config
     loadConfigSettings(configFilename)
-    smtpServer = setupSMTPServer((fromAddress, emailPass))
+
+    # Setup SMTP Server
+    smtpServer = EmailService(fromAddress, emailPass)
+    smtpServer.setupSMTPServer()
+    smtpServer.login(fromAddress, emailPass)
+
     # Main program execution
     print("This is an application for watching Mega.nz links on 4chan threads")
     print(
@@ -220,7 +200,7 @@ if __name__ == "__main__":
             print("New links found:" + newLinks.__str__())
             if (len(newLinks) > 0):
                 print("Sending email to %s" % toAddress)
-                sendEmail(smtpServer, fromAddress, toAddress, newLinks, link)
+                smtpServer.sendEmail(fromAddress, toAddress, "New megalinks found", "\n\n".join(newLinks))
                 saveLinksToFile(newLinks, databaseFilename)
         except urllib.error.HTTPError:
             pass
