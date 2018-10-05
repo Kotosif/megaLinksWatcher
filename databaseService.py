@@ -27,7 +27,7 @@ class DatabaseService:
             formattedLinks.append(link.replace("\n", ""))
         return formattedLinks
 
-    def saveToDatabase(self, links, overwrite=False):
+    def saveToDatabase(self, links, overwrite=False, upload=True):
         try:
             databaseFile = None
             if (overwrite):
@@ -38,8 +38,9 @@ class DatabaseService:
                 databaseFile.write(link)
                 databaseFile.write("\n")
             databaseFile.close()
-            response = cloudinary.uploader.upload(self.databaseName, resource_type="raw", use_filename=True, unique_filename=False, overwrite=True)
-            print("Cloudinary Upload Response:\n" + str(response))
+            if (upload):
+                response = cloudinary.uploader.upload(self.databaseName, resource_type="raw", use_filename=True, unique_filename=False, overwrite=True)
+                print("Cloudinary Upload Response:\n" + str(response))
         except (IOError, FileNotFoundError):
             print("Error opening database file %s" % self.databaseName)
     
@@ -64,4 +65,4 @@ class DatabaseService:
         except UnicodeDecodeError:
             lines = gzip.decompress(response.read()).decode('utf-8')
         links = lines.split("\r\n")
-        self.saveToDatabase(links, True)
+        self.saveToDatabase(links, True, False)
