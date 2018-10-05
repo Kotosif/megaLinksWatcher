@@ -5,7 +5,7 @@ import json
 import time
 from os import environ
 from emailService import EmailService
-
+from databaseService import DatabaseService
 
 def readLinkFromFile(filename):
     # Assumes the link is the first line of the file
@@ -91,34 +91,17 @@ def findAllMegaLinks(posts, responseType):
     return megaLinks
 
 
-def getNewLinks(megaLinks, databaseFilename):
+def getNewLinks(megaLinks, databaseService):
     try:
-        databaseFile = open(databaseFilename, "a+")
-        databaseFile.seek(0)
-        databaseLinks = databaseFile.readlines()
-        links = []
+        databaseLinks = databaseService.getLinks()
         newLinks = []
-        for link in databaseLinks:
-            links.append(link.replace("\n", ""))
         for link in megaLinks:
-            if not link in links:
+            if not link in databaseLinks:
                 newLinks.append(link)
         return newLinks
     except (IOError, FileNotFoundError):
         print("Error opening database file %s" % databaseFilename)
         return []
-
-
-def saveLinksToFile(links, databaseFilename):
-    try:
-        databaseFile = open(databaseFilename, "a")
-        for link in links:
-            databaseFile.write(link)
-            databaseFile.write("\n")
-        databaseFile.close()
-    except (IOError, FileNotFoundError):
-        print("Error opening database file %s" % databaseFilename)
-
 
 def loadConfigSettings(configFilename):
     global linkFilename
@@ -140,7 +123,6 @@ def loadConfigSettings(configFilename):
     except (IOError, FileNotFoundError):
         print("Error opening config file %s" % configFilename)
 
-
 def getURLLinkFromConfigVar():
     try:
         url = environ["url"]
@@ -161,6 +143,10 @@ emailPass = ""
 if __name__ == "__main__":
     # Load config
     loadConfigSettings(configFilename)
+
+    # Load database
+    databaseService = DatabaseService(databaseFilename, environ["cloudName"], environ["cloudinaryAPIKey"], environ["cloudinaryAPISecret"])
+    databaseService.loadCloudinaryToLocalDatabase()
 
     # Setup SMTP Server
     smtpServer = EmailService(fromAddress, emailPass)
@@ -196,12 +182,12 @@ if __name__ == "__main__":
             posts = getThreadPostsInJSONFormat(link)
             megaLinks = findAllMegaLinks(posts, responseType)
             print("Megalinks found:" + megaLinks.__str__())
-            newLinks = getNewLinks(megaLinks, databaseFilename)
+            newLinks = getNewLinks(megaLinks, databaseService)
             print("New links found:" + newLinks.__str__())
             if (len(newLinks) > 0):
                 print("Sending email to %s" % toAddress)
                 smtpServer.sendEmail(fromAddress, toAddress, "New megalinks found", "\n\n".join(newLinks))
-                saveLinksToFile(newLinks, databaseFilename)
+                databaseService.saveToDatabase(newLinks)
         except urllib.error.HTTPError:
             pass
         time.sleep(interval)
