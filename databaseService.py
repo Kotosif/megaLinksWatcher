@@ -39,7 +39,7 @@ class DatabaseService:
                 databaseFile.write("\n")
             databaseFile.close()
             if (upload):
-                response = cloudinary.uploader.upload(self.databaseName, resource_type="raw", use_filename=True, unique_filename=False, overwrite=True)
+                response = cloudinary.uploader.upload(self.databaseName, resource_type="raw", use_filename=True, unique_filename=False, overwrite=True, invalidate=True)
                 print("Cloudinary Upload Response:\n" + str(response))
         except (IOError, FileNotFoundError):
             print("Error opening database file %s" % self.databaseName)
@@ -60,9 +60,11 @@ class DatabaseService:
                 })
         response = urllib.request.urlopen(req)
         lines = ""
+        content = response.read()
         try:
-            lines = response.read().decode('utf-8')
-        except UnicodeDecodeError:
-            lines = gzip.decompress(response.read()).decode('utf-8')
+            lines = content.decode('utf-8')
+        except UnicodeDecodeError as ude:
+            decompressed = gzip.decompress(content)
+            lines = decompressed.decode('utf-8')
         links = lines.split("\r\n")
         self.saveToDatabase(links, True, False)

@@ -6,6 +6,7 @@ import time
 from os import environ
 from emailService import EmailService
 from databaseService import DatabaseService
+import sys
 
 def readLinkFromFile(filename):
     # Assumes the link is the first line of the file
@@ -138,20 +139,28 @@ interval = 0
 toAddress = ""
 fromAddress = ""
 emailPass = ""
+skipInitalCloudinaryLoad = False
 
 # Main Function
 if __name__ == "__main__":
     # Load config
     loadConfigSettings(configFilename)
 
+    # Check input arguments
+    if (len(sys.argv) - 1 > 0):
+        if (sys.argv[1] == "--sicl"):
+            skipInitalCloudinaryLoad = True
+    
     # Load database
     databaseService = DatabaseService(databaseFilename, environ["cloudName"], environ["cloudinaryAPIKey"], environ["cloudinaryAPISecret"])
-    databaseService.loadCloudinaryToLocalDatabase()
+    if (not skipInitalCloudinaryLoad):
+        databaseService.loadCloudinaryToLocalDatabase()
 
     # Setup SMTP Server
     smtpServer = EmailService(fromAddress, emailPass)
     smtpServer.setupSMTPServer()
     smtpServer.login(fromAddress, emailPass)
+
 
     # Main program execution
     print("This is an application for watching Mega.nz links on 4chan threads")
