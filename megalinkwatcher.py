@@ -36,33 +36,28 @@ def extractURLDetails(link):
 
 def getThreadPostsInJSONFormat(link):
     board, threadNumber = extractURLDetails(link)
-    try:
-        if "archived.moe" in link:
-            print("Archive link given")
-            print("Sending HTTP request to get thread in HTML format...")
-            req = urllib.request.Request(
-                link,
-                None,
-                headers={
-                    'User-Agent':
-                    'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7',
-                    'Accept':
-                    'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
-                })
-            response = urllib.request.urlopen(req)
-            return [response.read().decode('utf-8')]
-        else:
-            apiurl = "http://a.4cdn.org/%s/thread/%s.json" % (board,
-                                                              threadNumber)
-            print("Sending HTTP request to get thread in JSON format...")
-            response = urllib.request.urlopen(apiurl)
-            jsonResponse = json.loads(response.read().decode('utf-8'))
-            posts = jsonResponse["posts"]
-            return posts
-    except urllib.error.HTTPError as httpError:
-        print(httpError.headers)
-        print(httpError)
-        raise httpError
+    if "archived.moe" in link:
+        print("Archive link given")
+        print("Sending HTTP request to get thread in HTML format...")
+        req = urllib.request.Request(
+            link,
+            None,
+            headers={
+                'User-Agent':
+                'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7',
+                'Accept':
+                'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+            })
+        response = urllib.request.urlopen(req)
+        return [response.read().decode('utf-8')]
+    else:
+        apiurl = "http://a.4cdn.org/%s/thread/%s.json" % (board,
+                                                            threadNumber)
+        print("Sending HTTP request to get thread in JSON format...")
+        response = urllib.request.urlopen(apiurl)
+        jsonResponse = json.loads(response.read().decode('utf-8'))
+        posts = jsonResponse["posts"]
+        return posts
 
 
 def findAllMegaLinks(posts, responseType):
@@ -197,6 +192,9 @@ if __name__ == "__main__":
                 print("Sending email to %s" % toAddress)
                 smtpServer.sendEmail(fromAddress, toAddress, "New megalinks found", "\n\n".join(newLinks))
                 databaseService.saveToDatabase(newLinks)
-        except urllib.error.HTTPError:
+        except urllib.error.HTTPError as httpError:
+            if httpError.code == 404:
+                smtpServer.sendEmail(fromAddress, toAddress, "Megalinks - Thread is closed", "The 4chan thread you were monitoring has been archived. Please update link or stop process")
+            print (httpError)
             pass
         time.sleep(interval)

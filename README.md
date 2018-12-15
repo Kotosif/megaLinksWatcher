@@ -49,3 +49,7 @@ As a result, you should create a Cloudinary account and add these values to the 
 ## Usage
 
 Run the application on the command line with `python megalinkswatcher.py`
+
+Optional parameters:
+
+`--sicl` - Skips initial Cloudinary load
