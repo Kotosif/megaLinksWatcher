@@ -1,4 +1,6 @@
 import smtplib
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 from email.message import EmailMessage
 
 class EmailService:
@@ -12,7 +14,10 @@ class EmailService:
         # Make sure you have set your gmail account settings to
         # accept less secure apps
         # https://myaccount.google.com/lesssecureapps
-        server = smtplib.SMTP('smtp.gmail.com', 587)
+        # server = smtplib.SMTP('smtp.gmail.com', 587)
+
+        server = smtplib.SMTP(host='smtp.sendgrid.net', port=587)
+
         server.set_debuglevel(True)
         server.ehlo()
         server.starttls()

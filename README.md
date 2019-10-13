@@ -10,6 +10,9 @@ This application can be hosted on Heroku, and if you wish to do this then Cloudi
 The application has several ways to find the URL. If all of them fail, then it will ask
 the user to input the URL manually in the command line.
 
+Install requirements by doing:
+`pip install -r requirements.txt`
+
 ## Setup
 
 **Step 1.**
