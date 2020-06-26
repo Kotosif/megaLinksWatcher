@@ -72,7 +72,7 @@ def findAllMegaLinks(posts, responseType):
                 comment = post["com"]
                 matches = regex.findall(comment)
                 for match in matches:
-                    fullMatch = "".join(match)
+                    fullMatch = match[0]
                     fullMatch = fullMatch.replace("<wbr>", "")
                     fullMatch = fullMatch.replace("<", "")
                     fullMatch = fullMatch.strip()
@@ -105,6 +105,7 @@ def loadConfigSettings(configFilename):
     global toAddress
     global interval
     global fromAddress
+    global emailUsername
     global emailPass
     try:
         configFile = open(configFilename, "r")
@@ -114,6 +115,7 @@ def loadConfigSettings(configFilename):
         databaseFilename = configJSON["databaseFile"]
         toAddress = environ["toAddress"]
         fromAddress = environ["fromAddress"]
+        emailUsername = environ["emailUsername"]
         emailPass = environ["emailpass"]
         interval = configJSON["interval"]
     except (IOError, FileNotFoundError):
@@ -133,6 +135,7 @@ databaseFilename = ""
 interval = 0
 toAddress = ""
 fromAddress = ""
+emailUsername = ""
 emailPass = ""
 skipInitalCloudinaryLoad = False
 
@@ -152,10 +155,9 @@ if __name__ == "__main__":
         databaseService.loadCloudinaryToLocalDatabase()
 
     # Setup SMTP Server
-    smtpServer = EmailService(fromAddress, emailPass)
+    smtpServer = EmailService(emailUsername, emailPass)
     smtpServer.setupSMTPServer()
-    smtpServer.login(fromAddress, emailPass)
-
+    smtpServer.login()
 
     # Main program execution
     print("This is an application for watching Mega.nz links on 4chan threads")

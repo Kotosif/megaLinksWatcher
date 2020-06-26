@@ -27,8 +27,8 @@ class EmailService:
     def closeSMTPServer(self):
         self.server.close()
 
-    def login(self, username, password):
-        self.server.login(username, password)
+    def login(self):
+        self.server.login(self.username, self.password)
 
     def sendEmail(self, fromAddress, toAddress, subject, content):
         try:
