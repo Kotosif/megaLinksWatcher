@@ -62,7 +62,7 @@ def getThreadPostsInJSONFormat(link):
 
 def findAllMegaLinks(posts, responseType):
     # posts - a list of the posts as a json object returned from the 4chan API
-    regex = re.compile(r"(https://mega\.nz/((folder\/)|(#.?!))([\w!_#-]+(<wbr>)?)+)( |<|$)")
+    regex = re.compile(r"https://mega\.nz(((\/folder\/)|(\/[#.?!]))((?=(?P<lookahead>[\w!_#-]+))(?P=lookahead)(<wbr>)?)+)+( |<|$)")
     megaLinks = []
     matches = []
     print("Finding all mega links in thread...")
